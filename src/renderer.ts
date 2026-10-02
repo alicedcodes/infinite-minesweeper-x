@@ -35,6 +35,7 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
   const program = createProgram(gl, VS, FS);
   gl.useProgram(program);
 
+  gl.clearColor(0x16 / 255, 0x16 / 255, 0x16 / 255, 1);
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
