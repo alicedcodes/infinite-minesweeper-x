@@ -1,4 +1,5 @@
-import { defineConfig } from "vite-plus";
+import { defineConfig, lazyPlugins } from "vite-plus";
+import { VitePWA } from "vite-pwa-plugin";
 
 export default defineConfig({
   staged: {
@@ -17,4 +18,16 @@ export default defineConfig({
     options: { typeAware: true, typeCheck: true },
   },
   base: "/infinite-minesweeper/",
+  plugins: lazyPlugins(() => [
+    VitePWA({
+      manifest: {
+        name: "Infinite Minesweeper",
+        short_name: "Minesweeper",
+        description: "A modern, infinitely playable game of Minesweeper with no ads.",
+        display: "standalone",
+        orientation: "any",
+        theme_color: "2e2e2e",
+      },
+    }),
+  ]),
 });

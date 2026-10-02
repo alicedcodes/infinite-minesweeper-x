@@ -14,7 +14,8 @@
   "devDependencies": {
     "typescript": "~6.0.2",
     "vite": "catalog:",
-    "vite-plus": "catalog:"
+    "vite-plus": "catalog:",
+    "vite-pwa-plugin": "^0.21.1"
   },
   "devEngines": {
     "packageManager": {
