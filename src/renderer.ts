@@ -18,8 +18,6 @@ function createProgram(gl: WebGL2RenderingContext, vs: string, fs: string) {
 }
 
 export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
-  const dpr = window.devicePixelRatio || 1;
-
   const gl = canvas.getContext("webgl2", { alpha: false })!;
 
   const program = createProgram(gl, VS, FS);
@@ -31,6 +29,8 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
   const uCam = gl.getUniformLocation(program, "u_cam");
   const uTilePx = gl.getUniformLocation(program, "u_tilePx");
 
+  let dpr = window.devicePixelRatio || 1;
+
   const draw = () => {
     gl.uniform2f(uCam, camera.x, camera.y);
     gl.uniform1f(uTilePx, TILE_SIZE * camera.zoom * dpr);
@@ -38,6 +38,7 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
   };
 
   const resize = (width: number, height: number) => {
+    dpr = window.devicePixelRatio || 1;
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
     gl.viewport(0, 0, canvas.width, canvas.height);
