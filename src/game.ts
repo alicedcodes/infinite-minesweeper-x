@@ -1,3 +1,5 @@
+import { ANIMATION_DELAY } from "./shared";
+
 export const HIDDEN = 0;
 export const REVEALED = 1;
 export const FLAGGED = 2;
@@ -30,7 +32,7 @@ function hash2D(x: number, y: number, seed: number): number {
 
 export function createGame(
   getTile: (x: number, y: number) => number,
-  setTile: (x: number, y: number, state: number) => void,
+  setTile: (x: number, y: number, state: number, revealAt?: number) => void,
   onChange: () => void,
 ) {
   const seed = crypto.getRandomValues(new Uint32Array(1))[0]!;
@@ -61,10 +63,10 @@ export function createGame(
     return n;
   };
 
-  const revealTile = (x: number, y: number): void => {
+  const revealTile = (x: number, y: number, at?: number): void => {
     const isMine = hasMine(x, y);
     const nearby = isMine ? 0 : countNearby(x, y);
-    setTile(x, y, REVEALED | (isMine ? MINE_BIT : nearby << NEARBY_SHIFT));
+    setTile(x, y, REVEALED | (isMine ? MINE_BIT : nearby << NEARBY_SHIFT), at);
   };
 
   const isFinished = (x: number, y: number): boolean => {
@@ -87,35 +89,27 @@ export function createGame(
   let head = 0;
   let scheduled = false;
 
-  const schedule = (): void => {
-    if (scheduled) return;
-    scheduled = true;
-    requestAnimationFrame(processQueue);
-  };
-
   const processQueue = (): void => {
     scheduled = false;
 
-    for (let i = 0; i < TILES_PER_TICK && head < queue.length; i += 2) {
+    for (let i = 0; i < TILES_PER_TICK && head < queue.length; i++) {
       const sx = queue[head]!;
       const sy = queue[head + 1]!;
-      head += 2;
+      const at = queue[head + 2]! + ANIMATION_DELAY;
+      head += 3;
 
       for (const [ox, oy] of NEIGHBOURS) {
         const x = sx + ox;
         const y = sy + oy;
-        const state = stateOf(x, y);
 
-        if (state === HIDDEN) {
-          revealTile(x, y);
-          if (!hasMine(x, y) && countNearby(x, y) === 0) {
-            queue.push(x, y);
-          }
+        if (stateOf(x, y) === HIDDEN) {
+          revealTile(x, y, at);
+          if (!hasMine(x, y) && countNearby(x, y) === 0) queue.push(x, y, at);
         }
       }
     }
 
-    if (head > 1000 && head > queue.length / 2) {
+    if (head > 1500 && head > queue.length / 2) {
       queue.splice(0, head);
       head = 0;
     }
@@ -125,13 +119,19 @@ export function createGame(
     if (head < queue.length) schedule();
   };
 
+  const schedule = (): void => {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(processQueue);
+  };
+
   const click = (x: number, y: number, button: number): void => {
     const state = stateOf(x, y);
 
     if (button === 0) {
       if (state === REVEALED) {
         if (isFinished(x, y)) {
-          queue.push(x, y);
+          queue.push(x, y, performance.now());
           schedule();
         }
         return;
@@ -142,9 +142,10 @@ export function createGame(
         startX = x;
         startY = y;
       }
-      revealTile(x, y);
+      const now = performance.now();
+      revealTile(x, y, now);
       if (!hasMine(x, y) && countNearby(x, y) === 0) {
-        queue.push(x, y);
+        queue.push(x, y, now);
         schedule();
       }
     } else if (button === 2) {
