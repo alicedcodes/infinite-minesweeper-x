@@ -153,7 +153,11 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
     requestDraw();
   };
 
+  let drawingFrame = false;
+
   const draw = () => {
+    drawingFrame = false;
+
     const W = canvas.width;
     const H = canvas.height;
     const tilePx = TILE_SIZE * camera.zoom * dpr;
@@ -200,14 +204,10 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
     gl.disable(gl.SCISSOR_TEST);
   };
 
-  let frame: number | null = null;
-
   const requestDraw = () => {
-    if (frame !== null) return;
-    frame = requestAnimationFrame(() => {
-      frame = null;
-      draw();
-    });
+    if (drawingFrame) return;
+    drawingFrame = true;
+    requestAnimationFrame(() => draw());
   };
 
   const resize = (width: number, height: number) => {
