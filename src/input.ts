@@ -78,7 +78,7 @@ export function attachInput(canvas: HTMLCanvasElement, camera: Camera, onChange:
     const rect = canvas.getBoundingClientRect();
     const tilePx = TILE_SIZE * camera.zoom;
     const tx = Math.floor(camera.x + (e.clientX - rect.left - rect.width / 2) / tilePx);
-    const ty = Math.floor(camera.x + (e.clientX - rect.left - rect.width / 2) / tilePx);
+    const ty = Math.floor(camera.y + (e.clientY - rect.top - rect.height / 2) / tilePx);
     void tx;
     void ty;
   };
