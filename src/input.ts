@@ -5,7 +5,12 @@ const MAX_ZOOM = 2;
 const WHEEL_ZOOM_SPEED = 0.001;
 const PAN_THRESHOLD = 10;
 
-export function attachInput(canvas: HTMLCanvasElement, camera: Camera, onChange: () => void) {
+export function attachInput(
+  canvas: HTMLCanvasElement,
+  camera: Camera,
+  onChange: () => void,
+  onTileClick: (x: number, y: number, button: number) => void,
+) {
   canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 
   const zoomAt = (targetZoom: number, clientX: number, clientY: number) => {
@@ -79,8 +84,7 @@ export function attachInput(canvas: HTMLCanvasElement, camera: Camera, onChange:
     const tilePx = TILE_SIZE * camera.zoom;
     const tx = Math.floor(camera.x + (e.clientX - rect.left - rect.width / 2) / tilePx);
     const ty = Math.floor(camera.y + (e.clientY - rect.top - rect.height / 2) / tilePx);
-    void tx;
-    void ty;
+    onTileClick(tx, ty, e.button);
   };
   canvas.addEventListener("pointerup", stop);
   canvas.addEventListener("pointercancel", stop);
