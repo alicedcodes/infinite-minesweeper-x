@@ -3,8 +3,11 @@ import { TILE_SIZE, type Camera } from "./shared";
 const MIN_ZOOM = 0.0625;
 const MAX_ZOOM = 2;
 const WHEEL_ZOOM_SPEED = 0.001;
+const PAN_THRESHOLD = 10;
 
 export function attachInput(canvas: HTMLCanvasElement, camera: Camera, onChange: () => void) {
+  canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+
   const zoomAt = (targetZoom: number, clientX: number, clientY: number) => {
     const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoom));
     if (camera.zoom === newZoom) return;
@@ -31,30 +34,53 @@ export function attachInput(canvas: HTMLCanvasElement, camera: Camera, onChange:
     { passive: false },
   );
 
-  let dragging = false;
-  let lastX = 0;
-  let lastY = 0;
+  let pressed = false;
+  let panning = false;
+  let startX = 0;
+  let startY = 0;
+  let startCamX = 0;
+  let startCamY = 0;
 
   canvas.addEventListener("pointerdown", (e) => {
-    dragging = true;
-    lastX = e.clientX;
-    lastY = e.clientY;
+    if (e.button !== 0 && e.button !== 2) return;
+    pressed = true;
+    panning = false;
+    startX = e.clientX;
+    startY = e.clientY;
+    startCamX = camera.x;
+    startCamY = camera.y;
     canvas.setPointerCapture(e.pointerId);
   });
 
   canvas.addEventListener("pointermove", (e) => {
-    if (!dragging) return;
+    if (!pressed) return;
     const { clientX, clientY } = e;
-    const tilePx = TILE_SIZE * camera.zoom;
-    camera.x -= (clientX - lastX) / tilePx;
-    camera.y -= (clientY - lastY) / tilePx;
-    lastX = clientX;
-    lastY = clientY;
-    onChange();
+    if (!panning && Math.hypot(clientX - startX, clientY - startY) >= PAN_THRESHOLD) {
+      panning = true;
+    }
+    if (panning) {
+      const tilePx = TILE_SIZE * camera.zoom;
+      camera.x = startCamX - (clientX - startX) / tilePx;
+      camera.y = startCamY - (clientY - startY) / tilePx;
+      onChange();
+    }
   });
 
-  const stop = () => {
-    dragging = false;
+  const stop = (e: PointerEvent) => {
+    if (!pressed) return;
+    pressed = false;
+    if (panning) {
+      panning = false;
+      return;
+    }
+    if (e.type === "pointercancel") return;
+
+    const rect = canvas.getBoundingClientRect();
+    const tilePx = TILE_SIZE * camera.zoom;
+    const tx = Math.floor(camera.x + (e.clientX - rect.left - rect.width / 2) / tilePx);
+    const ty = Math.floor(camera.x + (e.clientX - rect.left - rect.width / 2) / tilePx);
+    void tx;
+    void ty;
   };
   canvas.addEventListener("pointerup", stop);
   canvas.addEventListener("pointercancel", stop);
