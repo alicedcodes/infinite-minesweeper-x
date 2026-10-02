@@ -153,20 +153,21 @@ export function createGame(
     gs.startY = 0;
   };
 
-  const click = (x: number, y: number, button: number): void => {
+  const click = (x: number, y: number, reveal: boolean, touch: boolean): void => {
     const byte = getTile(x, y);
     const state = byte & STATE_MASK;
 
     if (gs.started && state === HIDDEN && !(byte & CAN_BIT)) return;
 
-    if (button === 0) {
-      if (state === REVEALED) {
-        if (isFinished(x, y) && !hasMine(x, y)) {
-          queue.push(x, y, performance.now());
-          schedule();
-        }
-        return;
+    if (state === REVEALED) {
+      if ((reveal || touch) && isFinished(x, y) && !hasMine(x, y)) {
+        queue.push(x, y, performance.now());
+        schedule();
       }
+      return;
+    }
+
+    if (reveal || (touch && !gs.started)) {
       if (state !== HIDDEN) return;
       if (!gs.started) {
         gs.started = true;
@@ -179,11 +180,11 @@ export function createGame(
         queue.push(x, y, now);
         schedule();
       }
-    } else if (button === 2) {
+    } else {
       if (state === HIDDEN) setTile(x, y, byte | FLAGGED);
       else if (state === FLAGGED) setTile(x, y, byte & ~STATE_MASK);
       else return;
-    } else return;
+    }
 
     onChange();
   };
