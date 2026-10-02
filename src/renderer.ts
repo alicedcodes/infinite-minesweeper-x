@@ -38,14 +38,24 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   };
 
+  let frame: number | null = null;
+
+  const requestDraw = () => {
+    if (frame !== null) return;
+    frame = requestAnimationFrame(() => {
+      frame = null;
+      draw();
+    });
+  };
+
   const resize = (width: number, height: number) => {
     dpr = window.devicePixelRatio || 1;
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.uniform2f(uRes, canvas.width, canvas.height);
-    draw();
+    requestDraw();
   };
 
-  return { resize, draw };
+  return { resize, requestDraw };
 }

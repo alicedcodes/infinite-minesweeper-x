@@ -8,7 +8,7 @@ const canvas = document.querySelector<HTMLCanvasElement>("#app")!;
 
 const camera: Camera = { x: 0, y: 0, zoom: 1 };
 const renderer = createRenderer(canvas, camera);
-attachInput(canvas, camera, renderer.draw);
+attachInput(canvas, camera, renderer.requestDraw);
 
 new ResizeObserver(([entry]) => {
   const { width, height } = entry!.contentRect;
