@@ -4,6 +4,7 @@ const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 2;
 const WHEEL_ZOOM_SPEED = 0.001;
 const PAN_THRESHOLD = 10;
+const DETAIL_MIN_PX = 25;
 
 export function attachInput(
   canvas: HTMLCanvasElement,
@@ -42,6 +43,9 @@ export function attachInput(
     },
     { passive: false },
   );
+
+  const lowDetail = (): boolean =>
+    TILE_SIZE * camera.zoom * (window.devicePixelRatio || 1) < DETAIL_MIN_PX;
 
   let pressed = false;
   let panning = false;
@@ -82,7 +86,7 @@ export function attachInput(
       panning = false;
       return;
     }
-    if (e.type === "pointercancel") return;
+    if (e.type === "pointercancel" || lowDetail()) return;
 
     const rect = canvas.getBoundingClientRect();
     const tilePx = TILE_SIZE * camera.zoom;
