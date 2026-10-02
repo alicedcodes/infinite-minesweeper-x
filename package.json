@@ -7,11 +7,13 @@
     "build": "tsc && vp build",
     "dev": "vp dev",
     "format": "vp format",
+    "generate-pwa-assets": "pwa-assets-generator",
     "lint": "vp lint",
     "prepare": "vp config",
     "preview": "vp preview"
   },
   "devDependencies": {
+    "@vite-pwa/assets-generator": "^2.0.0",
     "typescript": "~6.0.2",
     "vite": "catalog:",
     "vite-plus": "catalog:",
