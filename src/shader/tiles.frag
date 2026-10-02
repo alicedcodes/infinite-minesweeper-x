@@ -15,7 +15,8 @@ uniform sampler2D u_atlas;
 in vec2 v_world;
 out vec4 outColor;
 
-const vec3 HIDDEN_COLOUR = vec3(0.35, 0.38, 0.45);
+const vec3 CANT_COLOUR = vec3(0.20, 0.26, 0.32);
+const vec3 CAN_COLOUR = vec3(0.35, 0.38, 0.45);
 const vec3 REVEALED_COLOUR = vec3(0.75, 0.78, 0.85);
 const vec3 FLAGGED_COLOUR = vec3(0.95, 0.85, 0.45);
 const vec3 MINE_COLOUR = vec3(0.95, 0.55, 0.10);
@@ -48,8 +49,9 @@ void main() {
   uint state = b & 3u;
   bool mine = (b & 4u) != 0u;
   uint nearby = (b >> 3u) & 15u;
+  bool can = (b & 128u) != 0u;
 
-  vec3 colour = HIDDEN_COLOUR;
+  vec3 colour = can ? CAN_COLOUR : CANT_COLOUR;
   vec3 ink = vec3(1.0);
   uint glyph = 0u;
 
@@ -95,7 +97,7 @@ void main() {
   float border = floor(u_tilePx / BORDER_FRACTION);
   if (border < 1.0) {
     bool inside = all(lessThanEqual(abs(p), vec2(u_tilePx * 0.5 * sc)));
-    outColor = vec4(inside ? colour : HIDDEN_COLOUR, 1.0);
+    outColor = vec4(inside ? colour : CAN_COLOUR, 1.0);
     return;
   }
 
@@ -106,7 +108,7 @@ void main() {
   float under = sc < 1.0 ? clamp(0.5 - rr(p, hs, radius), 0.0, 1.0) : 0.0;
 
   float a = cov + under * (1.0 - cov);
-  vec3 c = a > 0.0 ? (colour * cov + HIDDEN_COLOUR * under * (1.0 - cov)) / a : colour;
+  vec3 c = a > 0.0 ? (colour * cov + CAN_COLOUR * under * (1.0 - cov)) / a : colour;
 
   outColor = vec4(c, a);
 }
