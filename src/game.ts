@@ -1,4 +1,5 @@
 import { ANIMATION_DELAY } from "./shared";
+import type { Meta } from "./storage";
 
 export const HIDDEN = 0;
 export const REVEALED = 1;
@@ -31,27 +32,34 @@ function hash2D(x: number, y: number, seed: number): number {
   return (h ^ (h >>> 16)) >>> 0;
 }
 
+function randomSeed() {
+  return crypto.getRandomValues(new Uint32Array(1))[0]!;
+}
+
 export function createGame(
   getTile: (x: number, y: number) => number,
   setTile: (x: number, y: number, state: number, revealAt?: number) => void,
   onChange: () => void,
+  saved?: Meta,
 ) {
-  const seed = crypto.getRandomValues(new Uint32Array(1))[0]!;
   const mineThreshold = MINE_DENSITY * 2 ** 32;
 
-  let started = false;
-  let startX = 0;
-  let startY = 0;
+  const gs = {
+    seed: saved?.seed ?? randomSeed(),
+    started: saved?.started ?? false,
+    startX: saved?.startX ?? 0,
+    startY: saved?.startY ?? 0,
+  };
 
   const hasMine = (x: number, y: number): boolean => {
     if (
-      started &&
-      Math.abs(x - startX) <= SAFE_ZONE_RADIUS &&
-      Math.abs(y - startY) <= SAFE_ZONE_RADIUS
+      gs.started &&
+      Math.abs(x - gs.startX) <= SAFE_ZONE_RADIUS &&
+      Math.abs(y - gs.startY) <= SAFE_ZONE_RADIUS
     ) {
       return false;
     }
-    return hash2D(x, y, seed) < mineThreshold;
+    return hash2D(x, y, gs.seed) < mineThreshold;
   };
 
   const stateOf = (x: number, y: number): number => getTile(x, y) & STATE_MASK;
@@ -137,7 +145,7 @@ export function createGame(
     const byte = getTile(x, y);
     const state = byte & STATE_MASK;
 
-    if (started && state === HIDDEN && !(byte & CAN_BIT)) return;
+    if (gs.started && state === HIDDEN && !(byte & CAN_BIT)) return;
 
     if (button === 0) {
       if (state === REVEALED) {
@@ -148,10 +156,10 @@ export function createGame(
         return;
       }
       if (state !== HIDDEN) return;
-      if (!started) {
-        started = true;
-        startX = x;
-        startY = y;
+      if (!gs.started) {
+        gs.started = true;
+        gs.startX = x;
+        gs.startY = y;
       }
       const now = performance.now();
       revealTile(x, y, now);
@@ -168,5 +176,5 @@ export function createGame(
     onChange();
   };
 
-  return { click, hasStarted: () => started };
+  return { click, state: gs };
 }

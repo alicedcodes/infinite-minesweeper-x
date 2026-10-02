@@ -132,6 +132,7 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
   };
 
   const chunks = new Map<string, Chunk>();
+  const dirty = new Set<string>();
   const emptyTexture = createTileTexture(new Uint8Array(CHUNK * CHUNK));
   const emptyRevealTexture = createRevealTexture();
   let animUntil = 0;
@@ -165,6 +166,7 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
     const lx = x - cx * CHUNK;
     const ly = y - cy * CHUNK;
     chunk.states[ly * CHUNK + lx] = state;
+    dirty.add(key);
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, chunk.texture);
@@ -199,6 +201,25 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
     }
 
     requestDraw();
+  };
+
+  const loadChunk = (cx: number, cy: number, states: Uint8Array): void => {
+    if (states.length !== CHUNK * CHUNK) return;
+    chunks.set(keyOf(cx, cy), {
+      states,
+      texture: createTileTexture(states),
+      revealTexture: createRevealTexture(),
+    });
+  };
+
+  const takeDirty = (): { cx: number; cy: number; states: Uint8Array }[] => {
+    const out: { cx: number; cy: number; states: Uint8Array }[] = [];
+    for (const key of dirty) {
+      const [cx, cy] = key.split(",").map(Number) as [number, number];
+      out.push({ cx, cy, states: chunks.get(key)!.states });
+    }
+    dirty.clear();
+    return out;
   };
 
   let drawingFrame = false;
@@ -271,5 +292,5 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
     requestDraw();
   };
 
-  return { resize, requestDraw, getTile, setTile };
+  return { resize, requestDraw, getTile, setTile, loadChunk, takeDirty };
 }

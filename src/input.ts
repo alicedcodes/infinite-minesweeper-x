@@ -11,7 +11,7 @@ export function attachInput(
   camera: Camera,
   onChange: () => void,
   onTileClick: (x: number, y: number, button: number) => void,
-  hasStarted: () => boolean,
+  gameState: { started: boolean },
 ) {
   canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 
@@ -19,7 +19,7 @@ export function attachInput(
     const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoom));
     if (camera.zoom === newZoom) return;
 
-    if (hasStarted()) {
+    if (gameState.started) {
       const rect = canvas.getBoundingClientRect();
       const offsetX = clientX - rect.left - rect.width / 2;
       const offsetY = clientY - rect.top - rect.height / 2;
@@ -71,7 +71,7 @@ export function attachInput(
     if (!panning && Math.hypot(clientX - startX, clientY - startY) >= PAN_THRESHOLD) {
       panning = true;
     }
-    if (panning && hasStarted()) {
+    if (panning && gameState.started) {
       const tilePx = TILE_SIZE * camera.zoom;
       camera.x = startCamX - (clientX - startX) / tilePx;
       camera.y = startCamY - (clientY - startY) / tilePx;
