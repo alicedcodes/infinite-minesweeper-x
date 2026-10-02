@@ -46,5 +46,5 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
     draw();
   };
 
-  return { resize };
+  return { resize, draw };
 }

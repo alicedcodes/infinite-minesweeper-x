@@ -1,3 +1,4 @@
+import { attachInput } from "./input";
 import { createRenderer } from "./renderer";
 import type { Camera } from "./shared";
 
@@ -7,6 +8,7 @@ const canvas = document.querySelector<HTMLCanvasElement>("#app")!;
 
 const camera: Camera = { x: 0, y: 0, zoom: 1 };
 const renderer = createRenderer(canvas, camera);
+attachInput(canvas, camera, renderer.draw);
 
 new ResizeObserver(([entry]) => {
   const { width, height } = entry!.contentRect;
