@@ -1,9 +1,14 @@
+export const HIDDEN = 0;
+export const REVEALED = 1;
+export const FLAGGED = 2;
+
 const STATE_MASK = 0b11;
 const MINE_BIT = 0b100;
 const NEARBY_SHIFT = 3;
 
 const MINE_DENSITY = 0.2;
 const SAFE_ZONE_RADIUS = 2;
+const TILES_PER_TICK = 100;
 
 const NEIGHBOURS = [
   [-1, 0],
@@ -46,6 +51,8 @@ export function createGame(
     return hash2D(x, y, seed) < mineThreshold;
   };
 
+  const stateOf = (x: number, y: number): number => getTile(x, y) & STATE_MASK;
+
   const countNearby = (x: number, y: number): number => {
     let n = 0;
     for (const [ox, oy] of NEIGHBOURS) {
@@ -54,25 +61,95 @@ export function createGame(
     return n;
   };
 
+  const revealTile = (x: number, y: number): void => {
+    const isMine = hasMine(x, y);
+    const nearby = isMine ? 0 : countNearby(x, y);
+    setTile(x, y, REVEALED | (isMine ? MINE_BIT : nearby << NEARBY_SHIFT));
+  };
+
+  const isFinished = (x: number, y: number): boolean => {
+    let nearbyMines = 0;
+    let flaggedCount = 0;
+
+    for (const [ox, oy] of NEIGHBOURS) {
+      const nx = x + ox;
+      const ny = y + oy;
+      const state = stateOf(nx, ny);
+
+      if (hasMine(nx, ny)) nearbyMines++;
+      if (state === FLAGGED) flaggedCount++;
+    }
+
+    return nearbyMines === flaggedCount;
+  };
+
+  const queue: number[] = [];
+  let head = 0;
+  let scheduled = false;
+
+  const schedule = (): void => {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(processQueue);
+  };
+
+  const processQueue = (): void => {
+    scheduled = false;
+
+    for (let i = 0; i < TILES_PER_TICK && head < queue.length; i += 2) {
+      const sx = queue[head]!;
+      const sy = queue[head + 1]!;
+      head += 2;
+
+      for (const [ox, oy] of NEIGHBOURS) {
+        const x = sx + ox;
+        const y = sy + oy;
+        const state = stateOf(x, y);
+
+        if (state === HIDDEN) {
+          revealTile(x, y);
+          if (!hasMine(x, y) && countNearby(x, y) === 0) {
+            queue.push(x, y);
+          }
+        }
+      }
+    }
+
+    if (head > 1000 && head > queue.length / 2) {
+      queue.splice(0, head);
+      head = 0;
+    }
+
+    onChange();
+
+    if (head < queue.length) schedule();
+  };
+
   const click = (x: number, y: number, button: number): void => {
-    const rawTile = getTile(x, y);
-    const state = rawTile & STATE_MASK;
+    const state = stateOf(x, y);
 
     if (button === 0) {
-      if (state !== 0) return;
+      if (state === REVEALED) {
+        if (isFinished(x, y)) {
+          queue.push(x, y);
+          schedule();
+        }
+        return;
+      }
+      if (state !== HIDDEN) return;
       if (!started) {
         started = true;
         startX = x;
         startY = y;
       }
-
-      const isMine = hasMine(x, y);
-      const packedValue = 1 | (isMine ? MINE_BIT : countNearby(x, y) << NEARBY_SHIFT);
-
-      setTile(x, y, packedValue);
+      revealTile(x, y);
+      if (!hasMine(x, y) && countNearby(x, y) === 0) {
+        queue.push(x, y);
+        schedule();
+      }
     } else if (button === 2) {
-      if (state === 0) setTile(x, y, 2);
-      else if (state === 2) setTile(x, y, 0);
+      if (state === HIDDEN) setTile(x, y, FLAGGED);
+      else if (state === FLAGGED) setTile(x, y, HIDDEN);
       else return;
     } else return;
 
