@@ -91,11 +91,7 @@ void main() {
         vec2(0.0, 1.0 / (u_tilePx * s))
       );
 
-    if (glyph >= 9u) {
-      colour = g.rgb + colour * (1.0 - g.a);
-    } else {
-      colour = mix(colour, ink, g.a);
-    }
+    colour = mix(colour, ink, g.a);
   }
 
   if (!detail) {
