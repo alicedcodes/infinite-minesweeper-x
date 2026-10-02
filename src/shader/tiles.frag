@@ -11,8 +11,8 @@ out vec4 outColor;
 
 const vec3 HIDDEN_COLOUR = vec3(0.35, 0.38, 0.45);
 const vec3 REVEALED_COLOUR = vec3(0.75, 0.78, 0.85);
-const vec3 FLAGGED_COLOUR = vec3(0.85, 0.25, 0.25);
-const vec3 MINE_COLOUR = vec3(0.95, 0.55, 0.10);
+const vec3 FLAGGED_COLOUR = vec3(0.95, 0.55, 0.10);
+const vec3 MINE_COLOUR = vec3(0.85, 0.25, 0.25);
 
 void main() {
   ivec2 t = clamp(ivec2(v_world), ivec2(0), ivec2(63));
