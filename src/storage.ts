@@ -67,10 +67,16 @@ export async function clearChunks(): Promise<void> {
   await request((await db()).transaction(STORE, "readwrite").objectStore(STORE).clear());
 }
 
-export function createSaver(
-  getMeta: () => Meta,
-  takeDirty: () => ChunkRecord[],
-): { schedule: () => void; flush: () => void } {
+export async function clearAll(): Promise<void> {
+  try {
+    localStorage.removeItem(META_KEY);
+  } catch (err) {
+    console.error("Error clearing localStorage:", err);
+  }
+  await clearChunks();
+}
+
+export function createSaver(getMeta: () => Meta, takeDirty: () => ChunkRecord[]) {
   const pending = new Map<string, ChunkRecord>();
   let timer: number | undefined;
   let changed = false;
@@ -116,8 +122,17 @@ export function createSaver(
     timer ??= setTimeout(flush, SAVE_DELAY);
   };
 
+  const cancel = (): void => {
+    if (timer !== undefined) {
+      clearTimeout(timer);
+      timer = undefined;
+    }
+    pending.clear();
+    changed = false;
+  };
+
   document.addEventListener("visibilitychange", () => document.hidden && flush());
   window.addEventListener("pagehide", flush);
 
-  return { schedule, flush };
+  return { schedule, flush, cancel };
 }

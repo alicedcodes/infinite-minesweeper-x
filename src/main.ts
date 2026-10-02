@@ -1,8 +1,9 @@
+import { attachDOM } from "./dom";
 import { createGame } from "./game";
 import { attachInput } from "./input";
 import { createRenderer, loadFonts } from "./renderer";
 import type { Camera } from "./shared";
-import { loadMeta, loadChunks, clearChunks, createSaver } from "./storage";
+import { loadMeta, loadChunks, clearChunks, createSaver, clearAll } from "./storage";
 
 import "./style.css";
 
@@ -38,6 +39,16 @@ if (!canvas) throw new Error("Element '#app' not found.");
 
   const game = createGame(renderer.getTile, renderer.setTile, onChange, meta ?? undefined);
   attachInput(canvas, camera, onChange, game.click, game.state);
+  attachDOM(() => {
+    saver.cancel();
+    clearAll().catch(console.error);
+    renderer.reset();
+    game.reset();
+    camera.x = 0;
+    camera.y = 0;
+    camera.zoom = 1;
+    renderer.requestDraw();
+  });
 
   new ResizeObserver(([entry]) => {
     const { width, height } = entry!.contentRect;

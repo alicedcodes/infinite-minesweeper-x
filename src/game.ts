@@ -141,6 +141,15 @@ export function createGame(
     requestAnimationFrame(processQueue);
   };
 
+  const reset = (): void => {
+    queue.length = 0;
+    head = 0;
+    gs.seed = randomSeed();
+    gs.started = false;
+    gs.startX = 0;
+    gs.startY = 0;
+  };
+
   const click = (x: number, y: number, button: number): void => {
     const byte = getTile(x, y);
     const state = byte & STATE_MASK;
@@ -176,5 +185,5 @@ export function createGame(
     onChange();
   };
 
-  return { click, state: gs };
+  return { click, state: gs, reset };
 }

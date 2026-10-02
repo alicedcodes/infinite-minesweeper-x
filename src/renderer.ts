@@ -222,6 +222,17 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
     return out;
   };
 
+  const reset = (): void => {
+    for (const chunk of chunks.values()) {
+      gl.deleteTexture(chunk.texture);
+      gl.deleteTexture(chunk.revealTexture);
+    }
+    chunks.clear();
+    dirty.clear();
+    animUntil = 0;
+    requestDraw();
+  };
+
   let drawingFrame = false;
 
   const draw = () => {
@@ -292,5 +303,5 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
     requestDraw();
   };
 
-  return { resize, requestDraw, getTile, setTile, loadChunk, takeDirty };
+  return { resize, requestDraw, getTile, setTile, loadChunk, takeDirty, reset };
 }
