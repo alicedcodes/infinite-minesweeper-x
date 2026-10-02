@@ -4,6 +4,13 @@ import { TILE_SIZE, type Camera } from "./shared";
 
 const CHUNK = 64;
 
+const CELL = 128;
+const CELLS = 11;
+const FONT_FAMILY = 'Arial, Helvetica, sans-serif, "Noto Emoji Variable"';
+
+export const loadFonts = (): Promise<unknown> =>
+  document.fonts.load(`bold 16px ${FONT_FAMILY}`, "12345678💥🚩");
+
 function compile(gl: WebGL2RenderingContext, type: number, src: string) {
   const shader = gl.createShader(type)!;
   gl.shaderSource(shader, src);
@@ -34,10 +41,47 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
   const uCam = gl.getUniformLocation(program, "u_cam");
   const uTilePx = gl.getUniformLocation(program, "u_tilePx");
   const uTiles = gl.getUniformLocation(program, "u_tiles");
+  const uAtlas = gl.getUniformLocation(program, "u_atlas");
 
   gl.uniform1i(uTiles, 0);
+  gl.uniform1i(uAtlas, 1);
 
   let dpr = window.devicePixelRatio || 1;
+
+  const buildAtlas = (): void => {
+    const c = document.createElement("canvas");
+    c.width = CELL * CELLS;
+    c.height = CELL;
+    const g = c.getContext("2d")!;
+
+    g.font = `bold ${Math.round(CELL * 0.64)}px ${FONT_FAMILY}`;
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.fillStyle = "#fff";
+
+    const glyphs = ["", "1", "2", "3", "4", "5", "6", "7", "8", "💥", "🚩"];
+    for (let i = 0; i < glyphs.length; i++) {
+      const s = glyphs[i]!;
+      if (s) g.fillText(s, i * CELL + CELL / 2, CELL / 2 + CELL * 0.03);
+    }
+
+    gl.activeTexture(gl.TEXTURE1);
+    const atlasTex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, atlasTex);
+
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, c);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.activeTexture(gl.TEXTURE0);
+  };
+
+  buildAtlas();
 
   const createTileTexture = (data: Uint8Array): WebGLTexture => {
     const texture = gl.createTexture()!;
