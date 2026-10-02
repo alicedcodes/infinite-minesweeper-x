@@ -17,7 +17,7 @@ export default defineConfig({
     },
     options: { typeAware: true, typeCheck: true },
   },
-  base: "/infinite-minesweeper/",
+  base: "/infinite-minesweeper-x/",
   plugins: lazyPlugins(() => [
     VitePWA({
       manifest: {
