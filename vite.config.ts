@@ -11,6 +11,7 @@ export default defineConfig({
   lint: {
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     rules: {
+      "no-console": ["error", { allow: ["error", "warn"] }],
       "vite-plus/prefer-vite-plus-imports": "error",
     },
     options: { typeAware: true, typeCheck: true },
