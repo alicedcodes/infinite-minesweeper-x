@@ -32,6 +32,7 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
   let dpr = window.devicePixelRatio || 1;
 
   const draw = () => {
+    gl.clear(gl.COLOR_BUFFER_BIT);
     gl.uniform2f(uCam, camera.x, camera.y);
     gl.uniform1f(uTilePx, TILE_SIZE * camera.zoom * dpr);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
