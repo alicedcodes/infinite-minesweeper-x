@@ -4,7 +4,10 @@ export default defineConfig({
   staged: {
     "*": "vp check --fix",
   },
-  fmt: {},
+  fmt: {
+    sortImports: true,
+    sortPackageJson: { sortScripts: true },
+  },
   lint: {
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     rules: {
@@ -12,4 +15,5 @@ export default defineConfig({
     },
     options: { typeAware: true, typeCheck: true },
   },
+  base: "/infinite-minesweeper/",
 });
