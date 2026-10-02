@@ -4,7 +4,8 @@ import type { Camera } from "./shared";
 
 import "./style.css";
 
-const canvas = document.querySelector<HTMLCanvasElement>("#app")!;
+const canvas = document.querySelector<HTMLCanvasElement>("#app");
+if (!canvas) throw new Error("Element '#app' not found.");
 
 const camera: Camera = { x: 0, y: 0, zoom: 1 };
 const renderer = createRenderer(canvas, camera);
