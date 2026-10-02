@@ -76,7 +76,10 @@ void main() {
 
   vec2 p = (fract(v_world) - 0.5) * u_tilePx;
 
-  if (glyph > 0u && sc > 0.02) {
+  float border = floor(u_tilePx / BORDER_FRACTION);
+  bool detail = border >= 1.0;
+
+  if (detail && glyph > 0u && sc > 0.02) {
     vec2 uvc = clamp(p / (u_tilePx * s) + 0.5, 0.001, 0.999);
     vec2 uv = vec2((float(glyph) + uvc.x) / CELLS, uvc.y);
 
@@ -94,8 +97,7 @@ void main() {
     }
   }
 
-  float border = floor(u_tilePx / BORDER_FRACTION);
-  if (border < 1.0) {
+  if (!detail) {
     bool inside = all(lessThanEqual(abs(p), vec2(u_tilePx * 0.5 * sc)));
     outColor = vec4(inside ? colour : CAN_COLOUR, 1.0);
     return;
