@@ -10,6 +10,7 @@ export function attachInput(
   camera: Camera,
   onChange: () => void,
   onTileClick: (x: number, y: number, button: number) => void,
+  hasStarted: () => boolean,
 ) {
   canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 
@@ -17,15 +18,18 @@ export function attachInput(
     const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoom));
     if (camera.zoom === newZoom) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const offsetX = clientX - rect.left - rect.width / 2;
-    const offsetY = clientY - rect.top - rect.height / 2;
+    if (hasStarted()) {
+      const rect = canvas.getBoundingClientRect();
+      const offsetX = clientX - rect.left - rect.width / 2;
+      const offsetY = clientY - rect.top - rect.height / 2;
 
-    const tilePx = TILE_SIZE * camera.zoom;
-    const newTilePx = TILE_SIZE * newZoom;
+      const tilePx = TILE_SIZE * camera.zoom;
+      const newTilePx = TILE_SIZE * newZoom;
 
-    camera.x = camera.x + offsetX / tilePx - offsetX / newTilePx;
-    camera.y = camera.y + offsetY / tilePx - offsetY / newTilePx;
+      camera.x = camera.x + offsetX / tilePx - offsetX / newTilePx;
+      camera.y = camera.y + offsetY / tilePx - offsetY / newTilePx;
+    }
+
     camera.zoom = newZoom;
     onChange();
   };
@@ -63,7 +67,7 @@ export function attachInput(
     if (!panning && Math.hypot(clientX - startX, clientY - startY) >= PAN_THRESHOLD) {
       panning = true;
     }
-    if (panning) {
+    if (panning && hasStarted()) {
       const tilePx = TILE_SIZE * camera.zoom;
       camera.x = startCamX - (clientX - startX) / tilePx;
       camera.y = startCamY - (clientY - startY) / tilePx;

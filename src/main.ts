@@ -11,7 +11,7 @@ if (!canvas) throw new Error("Element '#app' not found.");
 const camera: Camera = { x: 0, y: 0, zoom: 1 };
 const renderer = createRenderer(canvas, camera);
 const game = createGame(renderer.getTile, renderer.setTile, renderer.requestDraw);
-attachInput(canvas, camera, renderer.requestDraw, game.click);
+attachInput(canvas, camera, renderer.requestDraw, game.click, game.hasStarted);
 
 new ResizeObserver(([entry]) => {
   const { width, height } = entry!.contentRect;

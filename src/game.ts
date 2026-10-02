@@ -11,7 +11,7 @@ function hash2D(x: number, y: number, seed: number): number {
 export function createGame(
   getTile: (x: number, y: number) => number,
   setTile: (x: number, y: number, state: number) => void,
-  draw: () => void,
+  onChange: () => void,
 ) {
   const seed = crypto.getRandomValues(new Uint32Array(1))[0]!;
   const mineThreshold = MINE_DENSITY * 2 ** 32;
@@ -48,8 +48,8 @@ export function createGame(
       else return;
     } else return;
 
-    draw();
+    onChange();
   };
 
-  return { click };
+  return { click, hasStarted: () => started };
 }
