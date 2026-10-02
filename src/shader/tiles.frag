@@ -14,6 +14,9 @@ const vec3 REVEALED_COLOUR = vec3(0.75, 0.78, 0.85);
 const vec3 FLAGGED_COLOUR = vec3(0.95, 0.55, 0.10);
 const vec3 MINE_COLOUR = vec3(0.85, 0.25, 0.25);
 
+const float BORDER_FRACTION = 25.0;
+const float RADIUS_FRACTION = 12.5;
+
 void main() {
   ivec2 t = clamp(ivec2(v_world), ivec2(0), ivec2(63));
   uint state = texelFetch(u_tiles, t, 0).r;
@@ -24,13 +27,13 @@ void main() {
     (state == 3u) ? MINE_COLOUR :
     HIDDEN_COLOUR;
 
-  float border = floor(u_tilePx / 20.0);
+  float border = floor(u_tilePx / BORDER_FRACTION);
   if (border < 1.0) {
     outColor = vec4(colour, 1.0);
     return;
   }
 
-  float radius = floor(u_tilePx / 8.0);
+  float radius = floor(u_tilePx / RADIUS_FRACTION);
 
   vec2 p = (fract(v_world) - 0.5) * u_tilePx;
   vec2 q = abs(p) - vec2(u_tilePx * 0.5 - border - radius);
