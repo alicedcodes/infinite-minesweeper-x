@@ -1,6 +1,8 @@
 import FS from "./shader/tiles.frag?raw";
 import VS from "./shader/tiles.vert?raw";
-import { TILE_SIZE, type Camera } from "./shared";
+import { ANIMATION_DURATION, TILE_SIZE, type Camera } from "./shared";
+
+type Chunk = { states: Uint8Array; texture: WebGLTexture; revealTexture: WebGLTexture };
 
 const CHUNK = 64;
 
@@ -42,9 +44,14 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
   const uTilePx = gl.getUniformLocation(program, "u_tilePx");
   const uTiles = gl.getUniformLocation(program, "u_tiles");
   const uAtlas = gl.getUniformLocation(program, "u_atlas");
+  const uTime = gl.getUniformLocation(program, "u_time");
+  const uAnimMs = gl.getUniformLocation(program, "u_animMs");
+  const uReveal = gl.getUniformLocation(program, "u_reveal");
 
   gl.uniform1i(uTiles, 0);
   gl.uniform1i(uAtlas, 1);
+  gl.uniform1f(uAnimMs, ANIMATION_DURATION);
+  gl.uniform1i(uReveal, 2);
 
   let dpr = window.devicePixelRatio || 1;
 
@@ -103,8 +110,31 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
     return texture;
   };
 
-  const chunks = new Map<string, { states: Uint8Array; texture: WebGLTexture }>();
+  const createRevealTexture = (): WebGLTexture => {
+    const texture = gl.createTexture()!;
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.R32F,
+      CHUNK,
+      CHUNK,
+      0,
+      gl.RED,
+      gl.FLOAT,
+      new Float32Array(CHUNK * CHUNK),
+    );
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.activeTexture(gl.TEXTURE0);
+    return texture;
+  };
+
+  const chunks = new Map<string, Chunk>();
   const emptyTexture = createTileTexture(new Uint8Array(CHUNK * CHUNK));
+  const emptyRevealTexture = createRevealTexture();
+  let animUntil = 0;
 
   const keyOf = (cx: number, cy: number): string => `${cx},${cy}`;
 
@@ -119,7 +149,7 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
     return chunk.states[ly * CHUNK + lx] ?? 0;
   };
 
-  const setTile = (x: number, y: number, state: number): void => {
+  const setTile = (x: number, y: number, state: number, revealAt?: number): void => {
     const cx = Math.floor(x / CHUNK);
     const cy = Math.floor(y / CHUNK);
     const key = keyOf(cx, cy);
@@ -128,7 +158,7 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
     if (!chunk) {
       if (state === 0) return;
       const states = new Uint8Array(CHUNK * CHUNK);
-      chunk = { states, texture: createTileTexture(states) };
+      chunk = { states, texture: createTileTexture(states), revealTexture: createRevealTexture() };
       chunks.set(key, chunk);
     }
 
@@ -150,6 +180,24 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
       new Uint8Array([state]),
     );
 
+    if (revealAt !== undefined) {
+      gl.activeTexture(gl.TEXTURE2);
+      gl.bindTexture(gl.TEXTURE_2D, chunk.revealTexture);
+      gl.texSubImage2D(
+        gl.TEXTURE_2D,
+        0,
+        lx,
+        ly,
+        1,
+        1,
+        gl.RED,
+        gl.FLOAT,
+        new Float32Array([revealAt]),
+      );
+      gl.activeTexture(gl.TEXTURE0);
+      animUntil = Math.max(animUntil, revealAt + ANIMATION_DURATION);
+    }
+
     requestDraw();
   };
 
@@ -169,6 +217,9 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
     gl.uniform2f(uRes, W, H);
     gl.uniform1f(uTilePx, tilePx);
 
+    const now = performance.now();
+    gl.uniform1f(uTime, now);
+
     const halfW = W / tilePx / 2;
     const halfH = H / tilePx / 2;
     const cx0 = Math.floor((camera.x - halfW) / CHUNK);
@@ -182,6 +233,8 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
       for (let cx = cx0; cx <= cx1; cx++) {
         const chunk = chunks.get(keyOf(cx, cy));
 
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(gl.TEXTURE_2D, chunk ? chunk.revealTexture : emptyRevealTexture);
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, chunk ? chunk.texture : emptyTexture);
 
@@ -202,6 +255,7 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
     }
 
     gl.disable(gl.SCISSOR_TEST);
+    if (now < animUntil) requestDraw();
   };
 
   const requestDraw = () => {

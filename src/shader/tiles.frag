@@ -6,7 +6,10 @@ precision highp usampler2D;
 
 uniform vec2 u_res;
 uniform float u_tilePx;
+uniform float u_time;
+uniform float u_animMs;
 uniform usampler2D u_tiles;
+uniform sampler2D u_reveal;
 uniform sampler2D u_atlas;
 
 in vec2 v_world;
@@ -32,6 +35,11 @@ const vec3 NUMBER_COLOUR[9] = vec3[9](
 const float BORDER_FRACTION = 25.0;
 const float RADIUS_FRACTION = 12.5;
 const float CELLS = 11.0;
+
+float rr(vec2 p, vec2 hs, float r) {
+  vec2 q = abs(p) - hs + r;
+  return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+}
 
 void main() {
   ivec2 t = clamp(ivec2(v_world), ivec2(0), ivec2(63));
@@ -59,17 +67,22 @@ void main() {
     glyph = 10u;
   }
 
+  float start = texelFetch(u_reveal, t, 0).r;
+  float k = start > 0.0 ? clamp((u_time - start) / u_animMs, 0.0, 1.0) : 1.0;
+  float sc = 1.0 - (1.0 - k) * (1.0 - k);
+  float s = max(sc, 0.001);
+
   vec2 p = (fract(v_world) - 0.5) * u_tilePx;
 
-  if (glyph > 0u) {
-    vec2 uvc = clamp(p / u_tilePx + 0.5, 0.001, 0.999);
+  if (glyph > 0u && sc > 0.02) {
+    vec2 uvc = clamp(p / (u_tilePx * s) + 0.5, 0.001, 0.999);
     vec2 uv = vec2((float(glyph) + uvc.x) / CELLS, uvc.y);
 
     vec4 g = textureGrad(
         u_atlas,
         uv,
-        vec2(1.0 / (u_tilePx * CELLS), 0.0),
-        vec2(0.0, 1.0 / u_tilePx)
+        vec2(1.0 / (u_tilePx * s * CELLS), 0.0),
+        vec2(0.0, 1.0 / (u_tilePx * s))
       );
 
     if (glyph >= 9u) {
@@ -81,13 +94,19 @@ void main() {
 
   float border = floor(u_tilePx / BORDER_FRACTION);
   if (border < 1.0) {
-    outColor = vec4(colour, 1.0);
+    bool inside = all(lessThanEqual(abs(p), vec2(u_tilePx * 0.5 * sc)));
+    outColor = vec4(inside ? colour : HIDDEN_COLOUR, 1.0);
     return;
   }
 
   float radius = floor(u_tilePx / RADIUS_FRACTION);
-  vec2 q = abs(p) - (vec2(u_tilePx * 0.5) - vec2(border)) + vec2(radius);
-  float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
+  vec2 hs = vec2(u_tilePx * 0.5) - vec2(border);
 
-  outColor = vec4(colour, clamp(0.5 - d, 0.0, 1.0));
+  float cov = sc > 0.0 ? clamp(0.5 - rr(p / s, hs, radius) * s, 0.0, 1.0) : 0.0;
+  float under = sc < 1.0 ? clamp(0.5 - rr(p, hs, radius), 0.0, 1.0) : 0.0;
+
+  float a = cov + under * (1.0 - cov);
+  vec3 c = a > 0.0 ? (colour * cov + HIDDEN_COLOUR * under * (1.0 - cov)) / a : colour;
+
+  outColor = vec4(c, a);
 }
