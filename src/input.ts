@@ -1,6 +1,6 @@
 import { TILE_SIZE, type Camera } from "./shared";
 
-const MIN_ZOOM = 0.0625;
+const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 2;
 const WHEEL_ZOOM_SPEED = 0.001;
 const PAN_THRESHOLD = 10;

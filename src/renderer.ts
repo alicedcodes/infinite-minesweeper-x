@@ -52,7 +52,6 @@ export function createRenderer(canvas: HTMLCanvasElement, camera: Camera) {
     dpr = window.devicePixelRatio || 1;
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
-    gl.viewport(0, 0, canvas.width, canvas.height);
     gl.uniform2f(uRes, canvas.width, canvas.height);
     requestDraw();
   };
