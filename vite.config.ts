@@ -20,6 +20,8 @@ export default defineConfig({
   base: "/infinite-minesweeper-x/",
   plugins: lazyPlugins(() => [
     VitePWA({
+      registerType: "autoUpdate",
+      injectRegister: "auto",
       manifest: {
         name: "Infinite Minesweeper",
         short_name: "Minesweeper",
