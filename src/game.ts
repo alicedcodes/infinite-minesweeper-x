@@ -7,6 +7,7 @@ export const FLAGGED = 2;
 const STATE_MASK = 0b11;
 const MINE_BIT = 0b100;
 const NEARBY_SHIFT = 3;
+const CAN_BIT = 0b10000000;
 
 const MINE_DENSITY = 0.2;
 const SAFE_ZONE_RADIUS = 2;
@@ -63,10 +64,17 @@ export function createGame(
     return n;
   };
 
-  const revealTile = (x: number, y: number, at?: number): void => {
+  const revealTile = (x: number, y: number, at: number): void => {
     const isMine = hasMine(x, y);
     const nearby = isMine ? 0 : countNearby(x, y);
     setTile(x, y, REVEALED | (isMine ? MINE_BIT : nearby << NEARBY_SHIFT), at);
+
+    for (const [ox, oy] of NEIGHBOURS) {
+      const nx = x + ox;
+      const ny = y + oy;
+      const v = getTile(nx, ny);
+      if ((v & STATE_MASK) === HIDDEN && !(v & CAN_BIT)) setTile(nx, ny, v | CAN_BIT);
+    }
   };
 
   const isFinished = (x: number, y: number): boolean => {
@@ -126,7 +134,10 @@ export function createGame(
   };
 
   const click = (x: number, y: number, button: number): void => {
-    const state = stateOf(x, y);
+    const byte = getTile(x, y);
+    const state = byte & STATE_MASK;
+
+    if (started && state === HIDDEN && !(byte & CAN_BIT)) return;
 
     if (button === 0) {
       if (state === REVEALED) {
@@ -149,8 +160,8 @@ export function createGame(
         schedule();
       }
     } else if (button === 2) {
-      if (state === HIDDEN) setTile(x, y, FLAGGED);
-      else if (state === FLAGGED) setTile(x, y, HIDDEN);
+      if (state === HIDDEN) setTile(x, y, byte | FLAGGED);
+      else if (state === FLAGGED) setTile(x, y, byte & ~STATE_MASK);
       else return;
     } else return;
 
