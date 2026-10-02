@@ -15,26 +15,25 @@ uniform sampler2D u_atlas;
 in vec2 v_world;
 out vec4 outColor;
 
-const vec3 CANT_COLOUR = vec3(0.20, 0.26, 0.32);
-const vec3 CAN_COLOUR = vec3(0.35, 0.38, 0.45);
+const vec3 CANT_COLOUR = vec3(0.08627);
+const vec3 CAN_COLOUR = vec3(0.18039);
 const vec3 REVEALED_COLOUR = vec3(0.75, 0.78, 0.85);
-const vec3 FLAGGED_COLOUR = vec3(0.95, 0.85, 0.45);
-const vec3 MINE_COLOUR = vec3(0.95, 0.55, 0.10);
+const vec3 MINE_INK = vec3(1.0, 0.38039, 0.30196);
 
-const vec3 NUMBER_COLOUR[9] = vec3[9](
-    vec3(0.0),
-    vec3(0.10, 0.25, 0.85),
-    vec3(0.10, 0.55, 0.15),
-    vec3(0.85, 0.15, 0.15),
-    vec3(0.10, 0.10, 0.55),
-    vec3(0.55, 0.10, 0.10),
-    vec3(0.10, 0.50, 0.50),
-    vec3(0.05, 0.05, 0.05),
-    vec3(0.40, 0.40, 0.40)
+const vec3 TILE_COLOUR[9] = vec3[9](
+    vec3(1.00000, 0.10980, 0.00000),
+    vec3(1.00000, 0.10980, 0.00000),
+    vec3(1.00000, 0.63529, 0.00000),
+    vec3(0.17647, 0.90588, 0.00000),
+    vec3(0.00000, 0.98431, 0.77647),
+    vec3(0.00000, 0.85490, 1.00000),
+    vec3(0.44314, 0.58431, 1.00000),
+    vec3(1.00000, 0.29412, 1.00000),
+    vec3(1.00000, 0.00000, 0.70980)
   );
 
-const float BORDER_FRACTION = 25.0;
-const float RADIUS_FRACTION = 12.5;
+const float BORDER_FRACTION = 24.0;
+const float RADIUS_FRACTION = 12.0;
 const float CELLS = 11.0;
 
 float rr(vec2 p, vec2 hs, float r) {
@@ -57,15 +56,17 @@ void main() {
 
   if (state == 1u) {
     if (mine) {
-      colour = MINE_COLOUR;
+      colour = CAN_COLOUR;
+      ink = MINE_INK;
       glyph = 9u;
     } else {
-      colour = REVEALED_COLOUR;
-      ink = NUMBER_COLOUR[min(nearby, 8u)];
+      colour = TILE_COLOUR[min(nearby, 8u)];
+      ink = vec3(0.0);
       glyph = nearby;
     }
   } else if (state == 2u) {
-    colour = FLAGGED_COLOUR;
+    colour = CAN_COLOUR;
+    ink = vec3(1.0);
     glyph = 10u;
   }
 
