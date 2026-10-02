@@ -94,7 +94,10 @@ export function createGame(
       const ny = y + oy;
       const state = stateOf(nx, ny);
 
-      if (hasMine(nx, ny)) nearbyMines++;
+      if (hasMine(nx, ny)) {
+        nearbyMines++;
+        if (state === REVEALED) flaggedCount++;
+      }
       if (state === FLAGGED) flaggedCount++;
     }
 
@@ -158,7 +161,7 @@ export function createGame(
 
     if (button === 0) {
       if (state === REVEALED) {
-        if (isFinished(x, y)) {
+        if (isFinished(x, y) && !hasMine(x, y)) {
           queue.push(x, y, performance.now());
           schedule();
         }
