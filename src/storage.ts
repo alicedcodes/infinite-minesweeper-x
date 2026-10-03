@@ -1,5 +1,5 @@
-const META_KEY = "infinite-minesweeper";
-const DB_NAME = "infinite-minesweeper";
+const META_KEY = "infinite-minesweeper-x";
+const DB_NAME = "infinite-minesweeper-x";
 const STORE = "chunks";
 const SAVE_DELAY = 500;
 
