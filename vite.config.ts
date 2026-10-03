@@ -1,5 +1,5 @@
+import { VitePWA } from "vite-plugin-pwa";
 import { defineConfig, lazyPlugins } from "vite-plus";
-import { VitePWA } from "vite-pwa-plugin";
 
 export default defineConfig({
   staged: {
