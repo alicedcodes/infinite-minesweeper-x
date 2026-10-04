@@ -46,7 +46,6 @@ if (!canvas) throw new Error("Element '#app' not found.");
     game.reset();
     camera.x = 0;
     camera.y = 0;
-    camera.zoom = 1;
     renderer.requestDraw();
   });
 
